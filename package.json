@@ -1,0 +1,48 @@
+{
+  "name": "dashboard-diario",
+  "version": "1.0.0",
+  "description": "App de datos diarios con IA",
+  "main": "main.js",
+  "author": "Gustavo José Molero",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "build:win": "electron-builder --win --x64",
+    "build:mac": "electron-builder --mac",
+    "build:linux": "electron-builder --linux"
+  },
+  "build": {
+    "appId": "com.gustavomolero.dashboarddiario",
+    "productName": "Dashboard Diario",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "src/**/*"
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "src/icons/icon-512.png"
+    },
+    "nsis": {
+      "oneClick": true,
+      "installerIcon": "src/icons/icon-512.png",
+      "shortcutName": "Dashboard Diario",
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "src/icons/icon-512.png"
+    },
+    "linux": {
+      "target": "AppImage",
+      "icon": "src/icons/icon-512.png"
+    }
+  },
+  "devDependencies": {
+    "electron": "^29.0.0",
+    "electron-builder": "^24.0.0"
+  }
+}
