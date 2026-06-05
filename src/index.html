@@ -1,0 +1,1079 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Diario">
+<meta name="theme-color" content="#c8f04a">
+<meta name="description" content="Tu app de datos diarios con IA">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<title>Dashboard Diario</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Unbounded:wght@300;400;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0e0e12;
+    --panel: #16161d;
+    --card: #1c1c26;
+    --border: #2a2a3a;
+    --accent: #c8f04a;
+    --accent2: #4af0c8;
+    --accent3: #f04a8a;
+    --text: #e8e8f0;
+    --muted: #6b6b88;
+    --radius: 14px;
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-top: env(safe-area-inset-top, 0px);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Space Mono', monospace;
+    height: 100dvh;
+    display: flex;
+    overflow: hidden;
+    padding-top: var(--safe-top);
+  }
+
+  /* ── SPLASH SCREEN ── */
+  #splash {
+    position: fixed;
+    inset: 0;
+    background: var(--bg);
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+    transition: opacity 0.5s, visibility 0.5s;
+  }
+
+  #splash.hidden { opacity: 0; visibility: hidden; }
+
+  .splash-logo {
+    font-family: 'Unbounded', sans-serif;
+    font-size: 48px;
+    font-weight: 900;
+    color: var(--accent);
+    letter-spacing: -2px;
+  }
+
+  .splash-sub {
+    font-size: 10px;
+    letter-spacing: 4px;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+
+  .splash-bar {
+    width: 120px;
+    height: 2px;
+    background: var(--border);
+    border-radius: 1px;
+    overflow: hidden;
+  }
+
+  .splash-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 1px;
+    animation: load 1.2s ease-out forwards;
+  }
+
+  @keyframes load {
+    from { width: 0%; }
+    to   { width: 100%; }
+  }
+
+  /* ── INSTALL BANNER ── */
+  #install-banner {
+    position: fixed;
+    bottom: calc(60px + var(--safe-bottom));
+    left: 12px; right: 12px;
+    background: var(--card);
+    border: 1px solid var(--accent);
+    border-radius: 14px;
+    padding: 14px 16px;
+    display: none;
+    align-items: center;
+    gap: 12px;
+    z-index: 500;
+    box-shadow: 0 8px 32px rgba(200,240,74,0.15);
+  }
+
+  #install-banner.show { display: flex; }
+
+  .install-icon { font-size: 28px; }
+  .install-text { flex: 1; }
+  .install-text strong { display: block; font-family: 'Unbounded', sans-serif; font-size: 11px; color: var(--accent); }
+  .install-text span { font-size: 10px; color: var(--muted); }
+  .install-btn { background: var(--accent); color: #0e0e12; border: none; border-radius: 8px; padding: 8px 14px; font-family: 'Unbounded', sans-serif; font-size: 10px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+  .install-close { color: var(--muted); cursor: pointer; font-size: 18px; padding: 4px; }
+
+  /* ── SIDEBAR (desktop) ── */
+  #sidebar {
+    width: 220px;
+    height: 100dvh;
+    background: var(--panel);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    padding: 24px 0;
+    flex-shrink: 0;
+    z-index: 10;
+  }
+
+  .sidebar-logo {
+    font-family: 'Unbounded', sans-serif;
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: 3px;
+    color: var(--accent);
+    padding: 0 20px 24px;
+    border-bottom: 1px solid var(--border);
+    text-transform: uppercase;
+  }
+
+  .sidebar-logo span { color: var(--muted); display: block; font-weight: 300; font-size: 9px; margin-top: 4px; letter-spacing: 2px; }
+
+  nav { padding: 16px 0; flex: 1; }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 11px;
+    letter-spacing: 1px;
+    color: var(--muted);
+    border-left: 3px solid transparent;
+    user-select: none;
+  }
+
+  .nav-item:hover { color: var(--text); background: rgba(200,240,74,0.04); }
+  .nav-item.active { color: var(--accent); border-left-color: var(--accent); background: rgba(200,240,74,0.06); }
+  .nav-icon { font-size: 16px; width: 20px; text-align: center; }
+
+  /* ── BOTTOM NAV (mobile) ── */
+  #bottom-nav {
+    display: none;
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    height: calc(58px + var(--safe-bottom));
+    background: var(--panel);
+    border-top: 1px solid var(--border);
+    z-index: 100;
+    padding-bottom: var(--safe-bottom);
+  }
+
+  .bnav-inner {
+    display: flex;
+    height: 58px;
+    align-items: center;
+    justify-content: space-around;
+  }
+
+  .bnav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    cursor: pointer;
+    padding: 6px 12px;
+    border-radius: 10px;
+    transition: all 0.2s;
+    color: var(--muted);
+    user-select: none;
+    min-width: 48px;
+  }
+
+  .bnav-item.active { color: var(--accent); }
+  .bnav-item .bnav-icon { font-size: 20px; }
+  .bnav-item .bnav-label { font-size: 8px; letter-spacing: 1px; text-transform: uppercase; }
+
+  /* ── MAIN ── */
+  #main {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .section { display: none; }
+  .section.active { display: contents; }
+
+  /* ── CARDS ── */
+  .top-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent), transparent);
+  }
+
+  .card-label { font-size: 9px; letter-spacing: 3px; color: var(--muted); text-transform: uppercase; margin-bottom: 10px; }
+  .card-value { font-family: 'Unbounded', sans-serif; font-size: 26px; font-weight: 700; color: var(--accent); line-height: 1; }
+  .card-sub { font-size: 10px; color: var(--muted); margin-top: 8px; }
+
+  #clock-card::before { background: linear-gradient(90deg, var(--accent2), transparent); }
+  #clock-card .card-value { color: var(--accent2); font-size: 34px; letter-spacing: -1px; }
+  #temp-card::before { background: linear-gradient(90deg, var(--accent3), transparent); }
+  #temp-card .card-value { color: var(--accent3); }
+
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  .card-title {
+    font-family: 'Unbounded', sans-serif;
+    font-size: 11px; font-weight: 700;
+    letter-spacing: 2px; margin-bottom: 14px; color: var(--text);
+  }
+
+  /* ── TASKS ── */
+  .task-input-row { display: flex; gap: 8px; margin-bottom: 12px; }
+
+  .task-input-row input {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    color: var(--text);
+    font-family: 'Space Mono', monospace;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .task-input-row input:focus { border-color: var(--accent); }
+
+  .btn {
+    background: var(--accent);
+    color: #0e0e12;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 14px;
+    cursor: pointer;
+    font-family: 'Unbounded', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    transition: opacity 0.15s;
+    white-space: nowrap;
+  }
+  .btn:active { opacity: 0.75; }
+  .btn.secondary { background: var(--border); color: var(--text); }
+
+  .task-list { list-style: none; display: flex; flex-direction: column; gap: 8px; max-height: 260px; overflow-y: auto; }
+
+  .task-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px;
+    background: var(--bg);
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    font-size: 12px;
+    transition: opacity 0.2s;
+  }
+
+  .task-item.done { opacity: 0.4; text-decoration: line-through; }
+
+  .task-check {
+    width: 20px; height: 20px;
+    border: 2px solid var(--border);
+    border-radius: 5px;
+    cursor: pointer;
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+    font-size: 12px;
+  }
+
+  .task-item.done .task-check { background: var(--accent); border-color: var(--accent); color: #0e0e12; }
+
+  .task-del { margin-left: auto; cursor: pointer; color: var(--muted); font-size: 18px; padding: 2px 6px; transition: color 0.2s; }
+  .task-del:active { color: var(--accent3); }
+
+  /* ── GOALS ── */
+  .goal-item { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-bottom: 8px; }
+  .goal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 8px; }
+  .goal-name { font-size: 12px; }
+  .goal-pct { font-family: 'Unbounded', sans-serif; font-size: 11px; color: var(--accent); }
+
+  .progress-bar { height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); border-radius: 2px; transition: width 0.5s ease; }
+
+  /* ── CALCULATOR ── */
+  .calc-display { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 14px 18px; text-align: right; margin-bottom: 12px; }
+  .calc-expr { font-size: 11px; color: var(--muted); min-height: 16px; }
+  .calc-result { font-family: 'Unbounded', sans-serif; font-size: 36px; font-weight: 700; color: var(--accent); }
+
+  .calc-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+
+  .calc-btn {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-family: 'Unbounded', sans-serif;
+    font-size: 14px;
+    padding: 18px 8px;
+    cursor: pointer;
+    transition: all 0.1s;
+    user-select: none;
+  }
+  .calc-btn:active { transform: scale(0.94); background: var(--border); }
+  .calc-btn.op { color: var(--accent2); }
+  .calc-btn.action { color: var(--accent); }
+  .calc-btn.eq { background: var(--accent); color: #0e0e12; font-weight: 700; border-color: var(--accent); }
+  .calc-btn.eq:active { opacity: 0.85; }
+  .calc-btn.zero { grid-column: span 2; }
+
+  /* ── CONVERSIONS ── */
+  .conv-group { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 14px; margin-bottom: 10px; }
+  .conv-title { font-size: 9px; letter-spacing: 3px; color: var(--accent); margin-bottom: 10px; text-transform: uppercase; }
+  .conv-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+
+  .conv-row input, .conv-row select {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 10px;
+    color: var(--text);
+    font-family: 'Space Mono', monospace;
+    font-size: 13px;
+    outline: none;
+    -webkit-appearance: none;
+  }
+
+  .conv-row input { width: 90px; }
+  .conv-row input:focus { border-color: var(--accent); }
+  .conv-result { font-family: 'Unbounded', sans-serif; color: var(--accent2); font-size: 14px; font-weight: 700; }
+
+  /* ── BAROMETER ── */
+  .baro-wrap { display: flex; gap: 20px; align-items: center; flex-wrap: wrap; }
+  .baro-gauge { width: 160px; height: 160px; position: relative; flex-shrink: 0; }
+  .baro-gauge svg { width: 100%; height: 100%; }
+  .baro-info { flex: 1; min-width: 140px; }
+  .baro-val { font-family: 'Unbounded', sans-serif; font-size: 30px; font-weight: 700; color: var(--accent); }
+  .baro-unit { font-size: 11px; color: var(--muted); }
+  .baro-desc { margin-top: 10px; font-size: 12px; color: var(--text); }
+  .baro-trend { margin-top: 6px; font-size: 11px; }
+
+  /* ── AI BUBBLE ── */
+  .ai-bubble {
+    background: linear-gradient(135deg, rgba(200,240,74,0.06), rgba(74,240,200,0.04));
+    border: 1px solid rgba(200,240,74,0.18);
+    border-radius: 12px;
+    padding: 14px 16px;
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--text);
+    margin-top: 12px;
+    min-height: 58px;
+    position: relative;
+  }
+
+  .ai-badge {
+    position: absolute;
+    top: -8px; left: 12px;
+    background: var(--accent);
+    color: #0e0e12;
+    font-family: 'Unbounded', sans-serif;
+    font-size: 8px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 20px;
+    letter-spacing: 1px;
+  }
+
+  @keyframes dots {
+    0%   { content: '·'; }
+    33%  { content: '··'; }
+    66%  { content: '···'; }
+    100% { content: ''; }
+  }
+  .loading-dots::after { content: ''; animation: dots 1.2s infinite; }
+
+  /* ── SCROLLBAR ── */
+  ::-webkit-scrollbar { width: 3px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 640px) {
+    #sidebar { display: none; }
+    #bottom-nav { display: block; }
+
+    body { padding-bottom: calc(58px + var(--safe-bottom)); }
+
+    #main {
+      padding: 14px;
+      padding-bottom: calc(58px + var(--safe-bottom) + 14px);
+      height: 100dvh;
+    }
+
+    .top-row { grid-template-columns: 1fr 1fr; }
+    #date-card { grid-column: span 2; }
+    .two-col { grid-template-columns: 1fr; }
+
+    .card-value { font-size: 22px; }
+    #clock-card .card-value { font-size: 30px; }
+
+    #install-banner { bottom: calc(68px + var(--safe-bottom)); }
+  }
+
+  @media (min-width: 641px) and (max-width: 900px) {
+    #sidebar { width: 64px; }
+    .sidebar-logo { display: none; }
+    .nav-item span:last-child { display: none; }
+    .nav-item { justify-content: center; padding: 12px; }
+    .top-row { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- SPLASH -->
+<div id="splash">
+  <div class="splash-logo">DD</div>
+  <div class="splash-sub">Dashboard Diario</div>
+  <div class="splash-bar"><div class="splash-fill"></div></div>
+  <div style="font-size:10px;color:var(--muted);letter-spacing:2px">por Gustavo Molero</div>
+</div>
+
+<!-- INSTALL BANNER -->
+<div id="install-banner">
+  <div class="install-icon">📲</div>
+  <div class="install-text">
+    <strong>INSTALAR APP</strong>
+    <span>Acceso rápido desde tu pantalla de inicio</span>
+  </div>
+  <button class="install-btn" id="install-btn">INSTALAR</button>
+  <span class="install-close" id="install-close">×</span>
+</div>
+
+<!-- SIDEBAR -->
+<div id="sidebar">
+  <div class="sidebar-logo">DIARIO<span>DASHBOARD v1.0</span></div>
+  <nav>
+    <div class="nav-item active" data-sec="home">
+      <span class="nav-icon">🏠</span><span>INICIO</span>
+    </div>
+    <div class="nav-item" data-sec="tareas">
+      <span class="nav-icon">✅</span><span>TAREAS</span>
+    </div>
+    <div class="nav-item" data-sec="metas">
+      <span class="nav-icon">🎯</span><span>METAS</span>
+    </div>
+    <div class="nav-item" data-sec="calc">
+      <span class="nav-icon">🔢</span><span>CALCULADORA</span>
+    </div>
+    <div class="nav-item" data-sec="conv">
+      <span class="nav-icon">⚖️</span><span>CONVERSIONES</span>
+    </div>
+    <div class="nav-item" data-sec="baro">
+      <span class="nav-icon">🌡️</span><span>BARÓMETRO</span>
+    </div>
+  </nav>
+</div>
+
+<!-- BOTTOM NAV (mobile) -->
+<div id="bottom-nav">
+  <div class="bnav-inner">
+    <div class="bnav-item active" data-sec="home"><span class="bnav-icon">🏠</span><span class="bnav-label">Inicio</span></div>
+    <div class="bnav-item" data-sec="tareas"><span class="bnav-icon">✅</span><span class="bnav-label">Tareas</span></div>
+    <div class="bnav-item" data-sec="metas"><span class="bnav-icon">🎯</span><span class="bnav-label">Metas</span></div>
+    <div class="bnav-item" data-sec="calc"><span class="bnav-icon">🔢</span><span class="bnav-label">Calc</span></div>
+    <div class="bnav-item" data-sec="conv"><span class="bnav-icon">⚖️</span><span class="bnav-label">Convertir</span></div>
+    <div class="bnav-item" data-sec="baro"><span class="bnav-icon">🌡️</span><span class="bnav-label">Clima</span></div>
+  </div>
+</div>
+
+<!-- MAIN CONTENT -->
+<div id="main">
+
+  <!-- HOME -->
+  <div id="sec-home" class="section active">
+    <div class="top-row">
+      <div class="card" id="date-card">
+        <div class="card-label">📅 Fecha Actual</div>
+        <div class="card-value" id="fecha-val" style="font-size:18px">—</div>
+        <div class="card-sub" id="dia-val">—</div>
+      </div>
+      <div class="card" id="clock-card">
+        <div class="card-label">🕐 Hora</div>
+        <div class="card-value" id="hora-val">00:00:00</div>
+        <div class="card-sub" id="seg-val">—</div>
+      </div>
+      <div class="card" id="temp-card">
+        <div class="card-label">🌡️ Temperatura</div>
+        <div class="card-value" id="temp-val">—°C</div>
+        <div class="card-sub" id="temp-desc">Obteniendo...</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-label" style="margin-bottom:6px">🤖 Resumen IA del día</div>
+      <div class="ai-bubble">
+        <span class="ai-badge">IA</span>
+        <span id="ai-resumen" class="loading-dots">Generando tu resumen diario</span>
+      </div>
+    </div>
+
+    <div class="two-col">
+      <div class="card">
+        <div class="card-title">TAREAS HOY</div>
+        <ul class="task-list" id="home-tasks-preview"></ul>
+        <div style="margin-top:12px">
+          <button class="btn secondary" data-sec="tareas" style="font-size:9px;padding:7px 12px">Ver todas →</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">METAS SEMANALES</div>
+        <div id="home-goals-preview"></div>
+        <div style="margin-top:12px">
+          <button class="btn secondary" data-sec="metas" style="font-size:9px;padding:7px 12px">Gestionar →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAREAS -->
+  <div id="sec-tareas" class="section">
+    <div class="card">
+      <div class="card-title">TAREAS DE LA SEMANA</div>
+      <div class="task-input-row">
+        <input type="text" id="task-input" placeholder="Nueva tarea..." onkeydown="if(event.key==='Enter')addTask()">
+        <button class="btn" onclick="addTask()">+ AÑADIR</button>
+      </div>
+      <ul class="task-list" id="task-list-full"></ul>
+    </div>
+  </div>
+
+  <!-- METAS -->
+  <div id="sec-metas" class="section">
+    <div class="card">
+      <div class="card-title">METAS SEMANALES</div>
+      <div class="task-input-row">
+        <input type="text" id="goal-input" placeholder="Nueva meta..." style="flex:2">
+        <input type="number" id="goal-target" placeholder="N°" min="1" style="width:64px">
+        <button class="btn" onclick="addGoal()">+ META</button>
+      </div>
+      <div id="goals-list"></div>
+    </div>
+    <div class="card">
+      <div class="card-label">🤖 Consejo IA para tus metas</div>
+      <div class="ai-bubble">
+        <span class="ai-badge">IA</span>
+        <span id="ai-metas">Añade metas para recibir consejos personalizados.</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- CALCULADORA -->
+  <div id="sec-calc" class="section">
+    <div class="card">
+      <div class="card-title">CALCULADORA</div>
+      <div class="calc-display">
+        <div class="calc-expr" id="calc-expr"></div>
+        <div class="calc-result" id="calc-display">0</div>
+      </div>
+      <div class="calc-grid">
+        <button class="calc-btn action" onclick="calcClear()">C</button>
+        <button class="calc-btn action" onclick="calcSign()">±</button>
+        <button class="calc-btn action" onclick="calcPct()">%</button>
+        <button class="calc-btn op" onclick="calcOp('/')">÷</button>
+        <button class="calc-btn" onclick="calcNum('7')">7</button>
+        <button class="calc-btn" onclick="calcNum('8')">8</button>
+        <button class="calc-btn" onclick="calcNum('9')">9</button>
+        <button class="calc-btn op" onclick="calcOp('*')">×</button>
+        <button class="calc-btn" onclick="calcNum('4')">4</button>
+        <button class="calc-btn" onclick="calcNum('5')">5</button>
+        <button class="calc-btn" onclick="calcNum('6')">6</button>
+        <button class="calc-btn op" onclick="calcOp('-')">−</button>
+        <button class="calc-btn" onclick="calcNum('1')">1</button>
+        <button class="calc-btn" onclick="calcNum('2')">2</button>
+        <button class="calc-btn" onclick="calcNum('3')">3</button>
+        <button class="calc-btn op" onclick="calcOp('+')">+</button>
+        <button class="calc-btn zero" onclick="calcNum('0')">0</button>
+        <button class="calc-btn" onclick="calcNum('.')">.</button>
+        <button class="calc-btn eq" onclick="calcEquals()">=</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONVERSIONES -->
+  <div id="sec-conv" class="section">
+    <div class="card">
+      <div class="card-title">CONVERSIONES</div>
+      <div class="conv-group">
+        <div class="conv-title">🌡️ TEMPERATURA</div>
+        <div class="conv-row">
+          <input type="number" id="temp-in" placeholder="Valor" oninput="convertTemp()">
+          <select id="temp-from" onchange="convertTemp()"><option value="C">°C</option><option value="F">°F</option><option value="K">K</option></select>
+          <span style="color:var(--muted)">→</span>
+          <select id="temp-to" onchange="convertTemp()"><option value="F">°F</option><option value="C">°C</option><option value="K">K</option></select>
+          <span class="conv-result" id="temp-out">—</span>
+        </div>
+      </div>
+      <div class="conv-group">
+        <div class="conv-title">📏 LONGITUD</div>
+        <div class="conv-row">
+          <input type="number" id="len-in" placeholder="Valor" oninput="convertLen()">
+          <select id="len-from" onchange="convertLen()"><option value="m">m</option><option value="km">km</option><option value="cm">cm</option><option value="mi">mi</option><option value="ft">ft</option><option value="in">in</option></select>
+          <span style="color:var(--muted)">→</span>
+          <select id="len-to" onchange="convertLen()"><option value="km">km</option><option value="m">m</option><option value="cm">cm</option><option value="mi">mi</option><option value="ft">ft</option><option value="in">in</option></select>
+          <span class="conv-result" id="len-out">—</span>
+        </div>
+      </div>
+      <div class="conv-group">
+        <div class="conv-title">⚖️ PESO</div>
+        <div class="conv-row">
+          <input type="number" id="wgt-in" placeholder="Valor" oninput="convertWgt()">
+          <select id="wgt-from" onchange="convertWgt()"><option value="kg">kg</option><option value="g">g</option><option value="lb">lb</option><option value="oz">oz</option></select>
+          <span style="color:var(--muted)">→</span>
+          <select id="wgt-to" onchange="convertWgt()"><option value="lb">lb</option><option value="kg">kg</option><option value="g">g</option><option value="oz">oz</option></select>
+          <span class="conv-result" id="wgt-out">—</span>
+        </div>
+      </div>
+      <div class="conv-group">
+        <div class="conv-title">💱 MONEDA (aprox.)</div>
+        <div class="conv-row">
+          <input type="number" id="cur-in" placeholder="Valor" oninput="convertCur()">
+          <select id="cur-from" onchange="convertCur()"><option value="EUR">EUR</option><option value="USD">USD</option><option value="GBP">GBP</option><option value="VES">VES</option></select>
+          <span style="color:var(--muted)">→</span>
+          <select id="cur-to" onchange="convertCur()"><option value="USD">USD</option><option value="EUR">EUR</option><option value="GBP">GBP</option><option value="VES">VES</option></select>
+          <span class="conv-result" id="cur-out">—</span>
+        </div>
+        <div style="font-size:9px;color:var(--muted);margin-top:8px">* Tasas aproximadas, no en tiempo real</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BARÓMETRO -->
+  <div id="sec-baro" class="section">
+    <div class="card">
+      <div class="card-title">BARÓMETRO Y CLIMA</div>
+      <div class="baro-wrap">
+        <div class="baro-gauge">
+          <svg viewBox="0 0 160 160">
+            <defs>
+              <linearGradient id="gaugeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" style="stop-color:#f04a8a"/>
+                <stop offset="50%" style="stop-color:#c8f04a"/>
+                <stop offset="100%" style="stop-color:#4af0c8"/>
+              </linearGradient>
+            </defs>
+            <path d="M 20 130 A 70 70 0 0 1 140 130" fill="none" stroke="#2a2a3a" stroke-width="12" stroke-linecap="round"/>
+            <path id="gauge-fill" d="M 20 130 A 70 70 0 0 1 140 130" fill="none" stroke="url(#gaugeGrad)" stroke-width="12" stroke-linecap="round" stroke-dasharray="220" stroke-dashoffset="110"/>
+            <line id="gauge-needle" x1="80" y1="130" x2="80" y2="50" stroke="#c8f04a" stroke-width="3" stroke-linecap="round" transform="rotate(0 80 130)"/>
+            <circle cx="80" cy="130" r="6" fill="#c8f04a"/>
+            <text x="18" y="148" fill="#6b6b88" font-size="8" font-family="Space Mono">LOW</text>
+            <text x="68" y="22" fill="#6b6b88" font-size="8" font-family="Space Mono">MED</text>
+            <text x="128" y="148" fill="#6b6b88" font-size="8" font-family="Space Mono">HI</text>
+          </svg>
+        </div>
+        <div class="baro-info">
+          <div class="baro-val" id="baro-val">— hPa</div>
+          <div class="baro-unit">Presión atmosférica</div>
+          <div class="baro-desc" id="baro-desc">Cargando...</div>
+          <div class="baro-trend" id="baro-trend"></div>
+        </div>
+      </div>
+      <div style="margin-top:16px;display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
+        <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center">
+          <div style="font-size:9px;color:var(--muted);letter-spacing:2px;margin-bottom:6px">HUMEDAD</div>
+          <div style="font-family:'Unbounded',sans-serif;font-size:20px;color:var(--accent2)" id="humedad-val">—%</div>
+        </div>
+        <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center">
+          <div style="font-size:9px;color:var(--muted);letter-spacing:2px;margin-bottom:6px">VIENTO</div>
+          <div style="font-family:'Unbounded',sans-serif;font-size:20px;color:var(--accent2)" id="viento-val">— km/h</div>
+        </div>
+        <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center">
+          <div style="font-size:9px;color:var(--muted);letter-spacing:2px;margin-bottom:6px">SENSACIÓN</div>
+          <div style="font-family:'Unbounded',sans-serif;font-size:20px;color:var(--accent3)" id="sensacion-val">—°C</div>
+        </div>
+      </div>
+      <div class="ai-bubble" style="margin-top:14px">
+        <span class="ai-badge">IA</span>
+        <span id="ai-clima" class="loading-dots">Cargando análisis climático</span>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<script>
+// ─── PWA: Service Worker ──────────────────────────────
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js')
+      .then(r => console.log('SW registered:', r.scope))
+      .catch(e => console.log('SW error:', e));
+  });
+}
+
+// ─── PWA: Install Prompt ──────────────────────────────
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  setTimeout(() => {
+    if (!localStorage.getItem('dd_installed')) {
+      document.getElementById('install-banner').classList.add('show');
+    }
+  }, 3000);
+});
+
+document.getElementById('install-btn').addEventListener('click', async () => {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  const { outcome } = await deferredPrompt.userChoice;
+  if (outcome === 'accepted') {
+    localStorage.setItem('dd_installed', '1');
+    document.getElementById('install-banner').classList.remove('show');
+  }
+  deferredPrompt = null;
+});
+
+document.getElementById('install-close').addEventListener('click', () => {
+  document.getElementById('install-banner').classList.remove('show');
+  localStorage.setItem('dd_installed', '1');
+});
+
+window.addEventListener('appinstalled', () => {
+  document.getElementById('install-banner').classList.remove('show');
+});
+
+// ─── SPLASH ───────────────────────────────────────────
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    document.getElementById('splash').classList.add('hidden');
+  }, 1400);
+});
+
+// ─── NAVIGATION ──────────────────────────────────────
+function showSection(id) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.getElementById('sec-' + id).classList.add('active');
+  document.querySelectorAll('.nav-item, .bnav-item').forEach(n => {
+    n.classList.toggle('active', n.dataset.sec === id);
+  });
+  if (id === 'tareas') renderTasksFull();
+  if (id === 'metas') renderGoals();
+  window.scrollTo(0, 0);
+}
+
+// Delegated click for nav items and quick buttons
+document.addEventListener('click', e => {
+  const el = e.target.closest('[data-sec]');
+  if (el) showSection(el.dataset.sec);
+});
+
+// ─── DATE & TIME ──────────────────────────────────────
+const DIAS = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+
+function updateClock() {
+  const now = new Date();
+  const h = String(now.getHours()).padStart(2,'0');
+  const m = String(now.getMinutes()).padStart(2,'0');
+  const s = String(now.getSeconds()).padStart(2,'0');
+  document.getElementById('hora-val').textContent = `${h}:${m}:${s}`;
+  const segs = now.getHours()*3600 + now.getMinutes()*60 + now.getSeconds();
+  document.getElementById('seg-val').textContent = `${segs.toLocaleString()} seg hoy`;
+  const d = now.getDate(), mes = MESES[now.getMonth()], anio = now.getFullYear();
+  document.getElementById('fecha-val').textContent = `${d} de ${mes} de ${anio}`;
+  document.getElementById('dia-val').textContent = DIAS[now.getDay()];
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// ─── WEATHER ─────────────────────────────────────────
+async function fetchWeather(lat, lon) {
+  try {
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,apparent_temperature,relative_humidity_2m,surface_pressure,wind_speed_10m,weather_code&wind_speed_unit=kmh`;
+    const r = await fetch(url);
+    const data = await r.json();
+    const c = data.current;
+    const temp = Math.round(c.temperature_2m);
+    const feels = Math.round(c.apparent_temperature);
+    const humid = c.relative_humidity_2m;
+    const pressure = Math.round(c.surface_pressure);
+    const wind = Math.round(c.wind_speed_10m);
+    const desc = weatherCodeToText(c.weather_code);
+
+    document.getElementById('temp-val').textContent = `${temp}°C`;
+    document.getElementById('temp-desc').textContent = desc;
+    document.getElementById('baro-val').textContent = `${pressure} hPa`;
+    document.getElementById('baro-desc').textContent = desc;
+    const trend = pressure > 1013 ? '↑ Alta presión — despejado' : pressure < 1000 ? '↓ Baja presión — lluvia' : '→ Presión normal';
+    document.getElementById('baro-trend').textContent = trend;
+    document.getElementById('baro-trend').style.color = pressure > 1013 ? '#c8f04a' : pressure < 1000 ? '#f04a8a' : '#4af0c8';
+    document.getElementById('humedad-val').textContent = `${humid}%`;
+    document.getElementById('viento-val').textContent = `${wind} km/h`;
+    document.getElementById('sensacion-val').textContent = `${feels}°C`;
+
+    const pct = Math.min(Math.max((pressure - 960) / (1060 - 960), 0), 1);
+    document.getElementById('gauge-needle').setAttribute('transform', `rotate(${-90 + pct * 180} 80 130)`);
+    document.getElementById('gauge-fill').style.strokeDashoffset = 220 - pct * 220;
+
+    aiClimaAnalysis(temp, desc, humid, wind, pressure);
+    aiDailySummary(temp, desc);
+  } catch(e) {
+    document.getElementById('temp-desc').textContent = 'Sin conexión';
+    document.getElementById('ai-resumen').textContent = 'Conecta a internet para activar la IA.';
+    document.getElementById('ai-clima').textContent = 'Sin datos de clima disponibles offline.';
+  }
+}
+
+function weatherCodeToText(code) {
+  const map = {0:'☀️ Despejado',1:'🌤️ Mayormente despejado',2:'⛅ Parcialmente nublado',3:'☁️ Cubierto',
+    45:'🌫️ Niebla',48:'🌫️ Niebla con escarcha',51:'🌦️ Llovizna',61:'🌧️ Lluvia leve',
+    63:'🌧️ Lluvia moderada',65:'🌧️ Lluvia intensa',71:'❄️ Nieve leve',80:'🌦️ Chubascos',95:'⛈️ Tormenta'};
+  return map[code] || '🌡️ Variable';
+}
+
+function getLocation() {
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      pos => fetchWeather(pos.coords.latitude, pos.coords.longitude),
+      () => fetchWeather(10.48, -66.88)
+    );
+  } else fetchWeather(10.48, -66.88);
+}
+
+// ─── AI ───────────────────────────────────────────────
+async function callAI(prompt) {
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 1000,
+      messages: [{ role: 'user', content: prompt }]
+    })
+  });
+  const data = await res.json();
+  return data.content?.[0]?.text || '—';
+}
+
+let tasks = JSON.parse(localStorage.getItem('dd_tasks') || '[]');
+let goals = JSON.parse(localStorage.getItem('dd_goals') || '[]');
+
+async function aiDailySummary(temp, desc) {
+  const dia = DIAS[new Date().getDay()];
+  const pendientes = tasks.filter(t => !t.done).length;
+  const prompt = `Eres un asistente de productividad. Genera un resumen motivacional del día en máximo 2 oraciones (español, tono fresco y directo): Hoy es ${dia}. Temperatura: ${temp}°C, ${desc}. Tareas pendientes: ${pendientes}. Metas activas: ${goals.length}.`;
+  document.getElementById('ai-resumen').textContent = await callAI(prompt);
+}
+
+async function aiClimaAnalysis(temp, desc, humid, wind, pressure) {
+  const prompt = `Eres un meteorólogo amigable. En 2 oraciones breves en español, da un consejo práctico basado en: ${temp}°C, ${desc}, humedad ${humid}%, viento ${wind}km/h, presión ${pressure}hPa.`;
+  document.getElementById('ai-clima').textContent = await callAI(prompt);
+}
+
+async function aiGoalsAdvice() {
+  if (!goals.length) { document.getElementById('ai-metas').textContent = 'Añade metas para recibir consejos.'; return; }
+  document.getElementById('ai-metas').textContent = 'Analizando tus metas...';
+  const goalsText = goals.map(g => `"${g.name}" (${g.current}/${g.target})`).join(', ');
+  const prompt = `Coach de productividad. 2-3 oraciones en español, consejo específico y motivador para: ${goalsText}. Sé directo.`;
+  document.getElementById('ai-metas').textContent = await callAI(prompt);
+}
+
+// ─── TASKS ───────────────────────────────────────────
+function saveTasks() { localStorage.setItem('dd_tasks', JSON.stringify(tasks)); renderTasksPreview(); }
+
+function addTask() {
+  const input = document.getElementById('task-input');
+  const text = input.value.trim();
+  if (!text) return;
+  tasks.push({ id: Date.now(), text, done: false });
+  input.value = '';
+  saveTasks(); renderTasksFull();
+}
+
+function toggleTask(id) {
+  const t = tasks.find(t => t.id === id);
+  if (t) t.done = !t.done;
+  saveTasks(); renderTasksFull();
+}
+
+function deleteTask(id) {
+  tasks = tasks.filter(t => t.id !== id);
+  saveTasks(); renderTasksFull();
+}
+
+function renderTaskItem(t, container) {
+  const li = document.createElement('li');
+  li.className = 'task-item' + (t.done ? ' done' : '');
+  li.innerHTML = `<div class="task-check" onclick="toggleTask(${t.id})">${t.done ? '✓' : ''}</div><span>${t.text}</span><span class="task-del" onclick="deleteTask(${t.id})">×</span>`;
+  container.appendChild(li);
+}
+
+function renderTasksFull() {
+  const ul = document.getElementById('task-list-full');
+  ul.innerHTML = '';
+  tasks.forEach(t => renderTaskItem(t, ul));
+}
+
+function renderTasksPreview() {
+  const ul = document.getElementById('home-tasks-preview');
+  ul.innerHTML = '';
+  if (!tasks.length) { ul.innerHTML = '<li style="color:var(--muted);font-size:11px;padding:8px">No hay tareas.</li>'; return; }
+  tasks.slice(0, 4).forEach(t => renderTaskItem(t, ul));
+}
+
+// ─── GOALS ───────────────────────────────────────────
+function saveGoals() { localStorage.setItem('dd_goals', JSON.stringify(goals)); renderGoalsPreview(); }
+
+function addGoal() {
+  const name = document.getElementById('goal-input').value.trim();
+  const target = parseInt(document.getElementById('goal-target').value) || 7;
+  if (!name) return;
+  goals.push({ id: Date.now(), name, target, current: 0 });
+  document.getElementById('goal-input').value = '';
+  document.getElementById('goal-target').value = '';
+  saveGoals(); renderGoals(); aiGoalsAdvice();
+}
+
+function updateGoalProgress(id, delta) {
+  const g = goals.find(g => g.id === id);
+  if (g) g.current = Math.max(0, Math.min(g.target, g.current + delta));
+  saveGoals(); renderGoals();
+}
+
+function deleteGoal(id) {
+  goals = goals.filter(g => g.id !== id);
+  saveGoals(); renderGoals();
+}
+
+function renderGoalItem(g, container) {
+  const pct = Math.round((g.current / g.target) * 100);
+  const div = document.createElement('div');
+  div.className = 'goal-item';
+  div.innerHTML = `
+    <div class="goal-header">
+      <span class="goal-name">${g.name}</span>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button onclick="updateGoalProgress(${g.id},-1)" style="background:var(--border);border:none;color:var(--text);border-radius:4px;width:26px;height:26px;cursor:pointer;font-size:16px">-</button>
+        <span style="font-family:'Unbounded',sans-serif;font-size:11px;color:var(--muted)">${g.current}/${g.target}</span>
+        <button onclick="updateGoalProgress(${g.id},1)" style="background:var(--accent);border:none;color:#0e0e12;border-radius:4px;width:26px;height:26px;cursor:pointer;font-size:16px;font-weight:bold">+</button>
+        <span class="goal-pct">${pct}%</span>
+        <span style="cursor:pointer;color:var(--muted);font-size:16px;padding:2px 6px" onclick="deleteGoal(${g.id})">×</span>
+      </div>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>`;
+  container.appendChild(div);
+}
+
+function renderGoals() {
+  const c = document.getElementById('goals-list');
+  c.innerHTML = '';
+  if (!goals.length) { c.innerHTML = '<div style="color:var(--muted);font-size:11px;padding:8px">Sin metas definidas.</div>'; return; }
+  goals.forEach(g => renderGoalItem(g, c));
+}
+
+function renderGoalsPreview() {
+  const c = document.getElementById('home-goals-preview');
+  c.innerHTML = '';
+  if (!goals.length) { c.innerHTML = '<div style="color:var(--muted);font-size:11px;padding:8px">Sin metas.</div>'; return; }
+  goals.slice(0, 3).forEach(g => renderGoalItem(g, c));
+}
+
+// ─── CALCULATOR ──────────────────────────────────────
+let calcVal='0', calcPrev='', calcOperator='', calcNewNum=true;
+
+function updateDisplay() { document.getElementById('calc-display').textContent = parseFloat(calcVal).toLocaleString('es',{maximumFractionDigits:10}); }
+
+function calcNum(n) {
+  if (calcNewNum) { calcVal = n==='.' ? '0.' : n; calcNewNum=false; }
+  else { if (n==='.' && calcVal.includes('.')) return; calcVal = calcVal==='0' && n!=='.' ? n : calcVal+n; }
+  updateDisplay();
+}
+
+function calcOp(op) { calcPrev=calcVal; calcOperator=op; calcNewNum=true; document.getElementById('calc-expr').textContent=`${calcPrev} ${op}`; }
+
+function calcEquals() {
+  if (!calcOperator) return;
+  const a=parseFloat(calcPrev), b=parseFloat(calcVal);
+  let r;
+  if (calcOperator==='+') r=a+b;
+  else if (calcOperator==='-') r=a-b;
+  else if (calcOperator==='*') r=a*b;
+  else if (calcOperator==='/') r=b!==0?a/b:'Error';
+  calcVal=String(r); calcOperator=''; calcNewNum=true;
+  document.getElementById('calc-expr').textContent='';
+  updateDisplay();
+}
+
+function calcClear() { calcVal='0'; calcPrev=''; calcOperator=''; calcNewNum=true; document.getElementById('calc-expr').textContent=''; updateDisplay(); }
+function calcSign() { calcVal=String(-parseFloat(calcVal)); updateDisplay(); }
+function calcPct() { calcVal=String(parseFloat(calcVal)/100); updateDisplay(); }
+
+// ─── CONVERSIONS ─────────────────────────────────────
+function convertTemp() {
+  const v=parseFloat(document.getElementById('temp-in').value);
+  if(isNaN(v)){document.getElementById('temp-out').textContent='—';return;}
+  const from=document.getElementById('temp-from').value, to=document.getElementById('temp-to').value;
+  let c; if(from==='C') c=v; else if(from==='F') c=(v-32)*5/9; else c=v-273.15;
+  let r; if(to==='C') r=c; else if(to==='F') r=c*9/5+32; else r=c+273.15;
+  document.getElementById('temp-out').textContent=r.toFixed(2)+' '+to;
+}
+
+const lenF={m:1,km:1000,cm:0.01,mi:1609.344,ft:0.3048,in:0.0254};
+function convertLen() {
+  const v=parseFloat(document.getElementById('len-in').value);
+  if(isNaN(v)){document.getElementById('len-out').textContent='—';return;}
+  const f=document.getElementById('len-from').value, t=document.getElementById('len-to').value;
+  document.getElementById('len-out').textContent=(v*lenF[f]/lenF[t]).toFixed(4)+' '+t;
+}
+
+const wgtF={kg:1,g:0.001,lb:0.453592,oz:0.0283495};
+function convertWgt() {
+  const v=parseFloat(document.getElementById('wgt-in').value);
+  if(isNaN(v)){document.getElementById('wgt-out').textContent='—';return;}
+  const f=document.getElementById('wgt-from').value, t=document.getElementById('wgt-to').value;
+  document.getElementById('wgt-out').textContent=(v*wgtF[f]/wgtF[t]).toFixed(4)+' '+t;
+}
+
+const rates={EUR:1,USD:1.08,GBP:0.86,VES:3900};
+function convertCur() {
+  const v=parseFloat(document.getElementById('cur-in').value);
+  if(isNaN(v)){document.getElementById('cur-out').textContent='—';return;}
+  const f=document.getElementById('cur-from').value, t=document.getElementById('cur-to').value;
+  document.getElementById('cur-out').textContent=(v/rates[f]*rates[t]).toFixed(2)+' '+t;
+}
+
+// ─── INIT ─────────────────────────────────────────────
+renderTasksPreview();
+renderGoalsPreview();
+getLocation();
+</script>
+</body>
+</html>

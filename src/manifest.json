@@ -1,0 +1,27 @@
+{
+  "name": "Dashboard Diario",
+  "short_name": "Diario",
+  "description": "Tu app de datos diarios con IA — por Gustavo Molero",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0e0e12",
+  "theme_color": "#c8f04a",
+  "orientation": "any",
+  "lang": "es",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [],
+  "categories": ["productivity", "utilities"]
+}
